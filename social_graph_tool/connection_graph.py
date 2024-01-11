@@ -196,6 +196,7 @@ class ConnectionGraph:
         """
         if account not in self._internal_graph.nodes:
             self.add_node(account, kind="ACCOUNT")
+# Generate a regex that will check for four digits, a dash, two digits, a dash, and two more digits.
 
         if (name, account) in self._internal_graph.edges:
             logging.warning(
