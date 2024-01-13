@@ -146,6 +146,19 @@ class ConnectionGraph:
         if account:
             self.add_person_account_edge(name, account)
 
+    def search_for_person_with_skill(self, skill: str):
+        """
+        Searches for persons in the graph who have a specific skill.
+
+        Parameters:
+        - skill (str): The skill to search for.
+
+        Returns:
+        - matching_persons (dict): A dictionary containing the matching persons as keys and their corresponding attributes as values.
+        """
+        matching_persons = dict(filter(lambda x: x[0] if isinstance(x[1], dict) and x[1].get('kind') == 'PERSON' and skill.lower() in x[1].get('skills', '').lower().split(',') else False, self._internal_graph.nodes(data=True)))
+        return matching_persons
+
     def add_person_org_edge(self, name: str, org: str):
         """
         Adds an edge between a person and an organization in the graph.
