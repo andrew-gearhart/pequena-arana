@@ -6,9 +6,7 @@ from social_graph_tool.connection_graph import (
 )
 
 
-# TODO: ADDEDGE, ADDNODE, SEARCH
-# ADDEDGE will need to have a selector for the edge types: ASOCWITH, ONACCOUNT, BASEDIN
-# ADDNODE will need to have a selector for the node types: PERSON, PLACE, ORG, ACCOUNT
+# TODO: SEARCH
 # SEARCH will likely have a modified attribute search inside of connection_graph (beforeEditing), and then display the results in a list.
 class MainMenu(npyscreen.Form):
     def __init__(self, *args, **kwargs):
@@ -47,11 +45,9 @@ class MainMenuSelector(npyscreen.MultiLineAction):
         elif act_on_this == "Add Person":
             self.parent.parentApp.switchForm("ADDPERSON")
         elif act_on_this == "Add Node":
-            npyscreen.notify_confirm("Function not implemented!", title="Error")
-            self.parent.parentApp.switchForm("MAIN")
+            self.parent.parentApp.switchForm("ADDNODECHOICE")
         elif act_on_this == "Add Edge":
-            npyscreen.notify_confirm("Function not implemented!", title="Error")
-            self.parent.parentApp.switchForm("MAIN")
+            self.parent.parentApp.switchForm("ADDEDGECHOICE")
         elif act_on_this == "Search":
             npyscreen.notify_confirm("Function not implemented!", title="Error")
             self.parent.parentApp.switchForm("MAIN")
@@ -67,6 +63,121 @@ class MainMenuSelector(npyscreen.MultiLineAction):
 
     def actionHighlighted(self, act_on_this, key_press):
         self._select_next_form(act_on_this, key_press)
+
+
+class AddNodeChoice(npyscreen.Form):
+    def create(self):
+        self.menu_value = self.add(
+            NodeSelector,
+            scroll_exit=True,
+            max_height=8,
+            name="Choose Node Type to Add:",
+            values=[
+                "PERSON",
+                "PLACE",
+                "ORGANIZATION",
+                "ACCOUNT",
+                "Back to Main Menu",
+            ],
+        )
+
+
+class NodeSelector(npyscreen.MultiLineAction):
+    def _select_next_form(self, act_on_this, key_press):
+        if act_on_this == "PERSON":
+            self.parent.parentApp.switchForm("ADDPERSON")
+        elif act_on_this == "PLACE":
+            self.parent.parentApp.getForm("ADDNODECHOICE").node_choice = "PLACE"
+            self.parent.parentApp.switchForm("ADDNODE")
+        elif act_on_this == "ORGANIZATION":
+            self.parent.parentApp.getForm("ADDNODECHOICE").node_choice = "ORGANIZATION"
+            self.parent.parentApp.switchForm("ADDNODE")
+        elif act_on_this == "ACCOUNT":
+            self.parent.parentApp.getForm("ADDNODECHOICE").node_choice = "ACCOUNT"
+            self.parent.parentApp.switchForm("ADDNODE")
+        elif act_on_this == "Back to Main Menu":
+            self.parent.parentApp.switchForm("MAIN")
+
+    def actionHighlighted(self, act_on_this, key_press):
+        self._select_next_form(act_on_this, key_press)
+
+
+class AddNode(npyscreen.Form):
+    def beforeEditing(self):
+        self.node_choice = self.parentApp.getForm("ADDNODECHOICE").node_choice
+        self.name = f"Social Graph Tool - Add Node ({self.node_choice})"
+
+    def create(self):
+        self.label = self.add(npyscreen.TitleText, name="Label:")
+
+    def afterEditing(self):
+        self.parentApp.getForm("MAIN").connection_graph.add_node(
+            self.label.value, kind=self.node_choice
+        )
+        self.parentApp.setNextForm("MAIN")
+
+
+class AddEdgeChoice(npyscreen.Form):
+    def create(self):
+        self.menu_value = self.add(
+            EdgeSelector,
+            scroll_exit=True,
+            max_height=8,
+            name="Choose Edge Type to Add (Note: Person must exist, but dest will be created if not):",
+            values=[
+                "ASSOCWITH(Person, Oranization)",
+                "ONACCOUNT(Person, Account)",
+                "BASEDIN(Person, Place)",
+                "Back to Main Menu",
+            ],
+        )
+
+
+class EdgeSelector(npyscreen.MultiLineAction):
+    def _select_next_form(self, act_on_this, key_press):
+        self.parent.parentApp.getForm("ADDEDGECHOICE").edge_title = act_on_this
+        if act_on_this == "ASSOCWITH(Person, Oranization)":
+            self.parent.parentApp.getForm("ADDEDGECHOICE").edge_choice = "ASSOCWITH"
+            self.parent.parentApp.switchForm("ADDEDGE")
+        elif act_on_this == "ONACCOUNT(Person, Account)":
+            self.parent.parentApp.getForm("ADDEDGECHOICE").edge_choice = "ONACCOUNT"
+            self.parent.parentApp.switchForm("ADDEDGE")
+        elif act_on_this == "BASEDIN(Person, Place)":
+            self.parent.parentApp.getForm("ADDEDGECHOICE").edge_choice = "BASEDIN"
+            self.parent.parentApp.switchForm("ADDEDGE")
+        elif act_on_this == "Back to Main Menu":
+            self.parent.parentApp.switchForm("MAIN")
+
+    def actionHighlighted(self, act_on_this, key_press):
+        self._select_next_form(act_on_this, key_press)
+
+
+class AddEdge(npyscreen.Form):
+    def beforeEditing(self):
+        self.edge_choice = self.parentApp.getForm("ADDEDGECHOICE").edge_choice
+        self.edge_title = self.parentApp.getForm("ADDEDGECHOICE").edge_title
+        self.name = f"Social Graph Tool - Add Edge ({self.edge_title})"
+
+    def create(self):
+        self.source = self.add(npyscreen.TitleText, name="Source:")
+        self.dest = self.add(npyscreen.TitleText, name="Endpoint:")
+
+    def afterEditing(self):
+        if self.edge_choice == "ASSOCWITH":
+            self.parentApp.getForm("MAIN").connection_graph.add_person_org_edge(
+                self.source.value, self.dest.value
+            )
+        elif self.edge_choice == "ONACCOUNT":
+            self.parentApp.getForm("MAIN").connection_graph.add_person_account_edge(
+                self.source.value, self.dest.value
+            )
+        elif self.edge_choice == "BASEDIN":
+            self.parentApp.getForm("MAIN").connection_graph.add_person_place_edge(
+                self.source.value, self.dest.value
+            )
+        else:
+            npyscreen.notify_confirm("No edge choice selected!", title="Error")
+        self.parentApp.setNextForm("MAIN")
 
 
 class LoadGraph(npyscreen.Form):
@@ -178,6 +289,18 @@ class ConsoleSocialGraphTool(npyscreen.NPSAppManaged):
         self.addForm("SAVEGRAPH", SaveGraph, name="Social Graph Tool - Save Graph")
         self.addForm("NEWGRAPH", NewGraph, name="Social Graph Tool - New Graph")
         self.addForm("ADDPERSON", AddPerson, name="Social Graph Tool - Add Person")
+        self.addForm(
+            "ADDEDGECHOICE",
+            AddEdgeChoice,
+            name="Social Graph Tool - Choose Edge Type to Add",
+        )
+        self.addForm("ADDEDGE", AddEdge, name="Social Graph Tool - Add Edge")
+        self.addForm(
+            "ADDNODECHOICE",
+            AddNodeChoice,
+            name="Social Graph Tool - Choose Node Type to Add",
+        )
+        self.addForm("ADDNODE", AddNode, name="Social Graph Tool - Add Node")
 
 
 if __name__ == "__main__":
