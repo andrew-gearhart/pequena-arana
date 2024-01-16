@@ -6,8 +6,6 @@ from social_graph_tool.connection_graph import (
 )
 
 
-# TODO: SEARCH
-# SEARCH will likely have a modified attribute search inside of connection_graph (beforeEditing), and then display the results in a list.
 class MainMenu(npyscreen.Form):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -49,8 +47,7 @@ class MainMenuSelector(npyscreen.MultiLineAction):
         elif act_on_this == "Add Edge":
             self.parent.parentApp.switchForm("ADDEDGECHOICE")
         elif act_on_this == "Search":
-            npyscreen.notify_confirm("Function not implemented!", title="Error")
-            self.parent.parentApp.switchForm("MAIN")
+            self.parent.parentApp.switchForm("SKILLSEARCH")
         elif act_on_this == "Save Graph":
             self.parent.parentApp.getForm("SAVEGRAPH").next_form = "MAIN"
             self.parent.parentApp.switchForm("SAVEGRAPH")
@@ -282,6 +279,30 @@ class AddPerson(npyscreen.Form):
         self.parentApp.setNextForm("MAIN")
 
 
+class SkillSearch(npyscreen.Form):
+    def create(self):
+        self.query = self.add(
+            npyscreen.TitleText,
+            name="Skill Query:",
+        )
+
+    def _tabulate_results(self, results):
+        sorted_results = dict(
+            sorted(results.items(), key=lambda item: item[1]["label"])
+        )
+        out = "\n"
+        for key, value in sorted_results.items():
+            out += f'{value["label"]:<50} {value["skills"]}\n'
+        return out
+
+    def afterEditing(self):
+        curr_graph = self.parentApp.getForm("MAIN").connection_graph
+        results = curr_graph.search_for_person_with_skill(self.query.value)
+        table = self._tabulate_results(results)
+        npyscreen.notify_confirm(f"{table}", title="Results", wide=True)
+        self.parentApp.setNextForm("MAIN")
+
+
 class ConsoleSocialGraphTool(npyscreen.NPSAppManaged):
     def onStart(self):
         self.addForm("MAIN", MainMenu, name="Social Graph Tool - Main Menu ()")
@@ -301,6 +322,9 @@ class ConsoleSocialGraphTool(npyscreen.NPSAppManaged):
             name="Social Graph Tool - Choose Node Type to Add",
         )
         self.addForm("ADDNODE", AddNode, name="Social Graph Tool - Add Node")
+        self.addForm(
+            "SKILLSEARCH", SkillSearch, name="Social Graph Tool - Skill Search"
+        )
 
 
 if __name__ == "__main__":

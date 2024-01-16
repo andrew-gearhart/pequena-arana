@@ -117,6 +117,7 @@ class ConnectionGraph:
                     kind}'. Doing nothing."
             )
 
+    # TODO: Add role attribute for a PERSON node.
     def add_person(
         self,
         name: str,
@@ -148,6 +149,7 @@ class ConnectionGraph:
         if account:
             self.add_person_account_edge(name, account)
 
+    # TODO: Modify this to obtain account, place, etc. information from the graph itself.
     def search_for_person_with_skill(self, skill: str):
         """
         Searches for persons in the graph who have a specific skill.
