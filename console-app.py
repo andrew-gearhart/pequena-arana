@@ -37,26 +37,34 @@ class MainMenu(npyscreen.Form):
 class MainMenuSelector(npyscreen.MultiLineAction):
     def _select_next_form(self, act_on_this, key_press):
         if act_on_this == "New Graph":  # Destructive
-            self.handle_destructive_action("NEWGRAPH")
+            self._handle_destructive_action("NEWGRAPH")
         elif act_on_this == "Load Graph":  # Destructive
-            self.handle_destructive_action("LOADGRAPH")
+            self._handle_destructive_action("LOADGRAPH")
         elif act_on_this == "Add Person":
-            self.parent.parentApp.switchForm("ADDPERSON")
+            self._fail_if_no_graph("ADDPERSON")
         elif act_on_this == "Add Node":
-            self.parent.parentApp.switchForm("ADDNODECHOICE")
+            self._fail_if_no_graph("ADDNODECHOICE")
         elif act_on_this == "Add Edge":
-            self.parent.parentApp.switchForm("ADDEDGECHOICE")
+            self._fail_if_no_graph("ADDEDGECHOICE")
         elif act_on_this == "Search":
-            self.parent.parentApp.switchForm("SKILLSEARCH")
+            self._fail_if_no_graph("SKILLSEARCH")
         elif act_on_this == "Save Graph":
             self.parent.parentApp.getForm("SAVEGRAPH").next_form = "MAIN"
-            self.parent.parentApp.switchForm("SAVEGRAPH")
+            self._fail_if_no_graph("SAVEGRAPH")
         elif act_on_this == "Exit":  # Destructive
-            self.handle_destructive_action(None)
+            self._handle_destructive_action(None)
 
     # Note: Currently overwriting any existing graph without warning.
-    def handle_destructive_action(self, next_form):
+    def _handle_destructive_action(self, next_form):
         self.parent.parentApp.switchForm(next_form)
+
+    def _fail_if_no_graph(self, form_for_success):
+        curr_graph = self.parent.parentApp.getForm("MAIN").connection_graph
+        if not curr_graph:
+            npyscreen.notify_confirm("No open graph!", title="Error")
+            self.parent.parentApp.switchForm("MAIN")
+        else:
+            self.parent.parentApp.switchForm(form_for_success)
 
     def actionHighlighted(self, act_on_this, key_press):
         self._select_next_form(act_on_this, key_press)
@@ -239,16 +247,14 @@ class SaveGraph(npyscreen.Form):
 
 
 class AddPerson(npyscreen.Form):
-    def beforeEditing(self):
-        curr_graph = self.parentApp.getForm("MAIN").connection_graph
-        if not curr_graph:
-            npyscreen.notify_confirm("No open graph to add person to!", title="Error")
-            self.parentApp.setNextForm("MAIN")
-
     def create(self):
         self.person_name = self.add(
             npyscreen.TitleText,
             name="Person Name:",
+        )
+        self.person_role = self.add(
+            npyscreen.TitleText,
+            name="Person Role:",
         )
         self.person_place = self.add(
             npyscreen.TitleText,
@@ -271,6 +277,7 @@ class AddPerson(npyscreen.Form):
         curr_graph = self.parentApp.getForm("MAIN").connection_graph
         curr_graph.add_person(
             self.person_name.value,
+            role=self.person_role.value,
             place=self.person_place.value,
             org=self.person_org.value,
             account=self.person_account.value,
@@ -292,7 +299,9 @@ class SkillSearch(npyscreen.Form):
         )
         out = "\n"
         for key, value in sorted_results.items():
-            out += f'{value["label"]:<50} {value["skills"]}\n'
+            if "role" not in value:
+                value["role"] = ""
+            out += f'{value["label"]:<50}{value["role"]:<50}{value["skills"]}\n'
         return out
 
     def afterEditing(self):

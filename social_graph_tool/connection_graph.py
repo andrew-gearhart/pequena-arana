@@ -121,6 +121,7 @@ class ConnectionGraph:
     def add_person(
         self,
         name: str,
+        role: str = "",
         place: str = "",
         org: str = "",
         account: str = "",
@@ -138,7 +139,7 @@ class ConnectionGraph:
         """
         if name in self._internal_graph.nodes:
             logging.warning("Node '{name}' already exists in the graph!")
-        self.add_node(name, kind="PERSON", keys={"skills": skills})
+        self.add_node(name, kind="PERSON", keys={"skills": skills, "role": role})
 
         if place:
             self.add_person_place_edge(name, place)
