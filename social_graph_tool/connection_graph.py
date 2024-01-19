@@ -80,7 +80,7 @@ class ConnectionGraph:
         logging.info(f"Adding node '{label}' of kind {kind}.")
         if self._node_type_valid(kind):
             self._internal_graph.add_node(
-                label, kind=kind, **(keys | self.NODECOLORS[kind] | self.NODESIZE)
+                label, label=label, kind=kind, **(keys | self.NODECOLORS[kind] | self.NODESIZE)
             )
         else:
             logging.error(
@@ -117,7 +117,6 @@ class ConnectionGraph:
                     kind}'. Doing nothing."
             )
 
-    # TODO: Add role attribute for a PERSON node.
     def add_person(
         self,
         name: str,
@@ -150,7 +149,6 @@ class ConnectionGraph:
         if account:
             self.add_person_account_edge(name, account)
 
-    # TODO: Modify this to obtain account, place, etc. information from the graph itself.
     def search_for_person_with_skill(self, skill: str):
         """
         Searches for persons in the graph who have a specific skill.
@@ -222,7 +220,6 @@ class ConnectionGraph:
         """
         if account not in self._internal_graph.nodes:
             self.add_node(account, kind="ACCOUNT")
-# Generate a regex that will check for four digits, a dash, two digits, a dash, and two more digits.
 
         if (name, account) in self._internal_graph.edges:
             logging.warning(
