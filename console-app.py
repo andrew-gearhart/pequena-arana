@@ -116,9 +116,12 @@ class AddNode(npyscreen.Form):
         self.label = self.add(npyscreen.TitleText, name="Label:")
 
     def afterEditing(self):
-        self.parentApp.getForm("MAIN").connection_graph.add_node(
-            self.label.value, kind=self.node_choice
-        )
+        if self.label.value:
+            self.parentApp.getForm("MAIN").connection_graph.add_node(
+                self.label.value, kind=self.node_choice
+            )
+        else:
+            npyscreen.notify_confirm("No label provided!", title="Error")
         self.parentApp.setNextForm("MAIN")
 
 
@@ -265,15 +268,18 @@ class AddPerson(npyscreen.Form):
         )
 
     def afterEditing(self):
-        curr_graph = self.parentApp.getForm("MAIN").connection_graph
-        curr_graph.add_person(
-            self.person_name.value,
-            role=self.person_role.value,
-            place=self.person_place.value,
-            org=self.person_org.value,
-            account=self.person_account.value,
-            skills=self.person_skills.value,
-        )
+        if self.person_name.value:
+            curr_graph = self.parentApp.getForm("MAIN").connection_graph
+            curr_graph.add_person(
+                self.person_name.value,
+                role=self.person_role.value,
+                place=self.person_place.value,
+                org=self.person_org.value,
+                account=self.person_account.value,
+                skills=self.person_skills.value,
+            )
+        else:
+            npyscreen.notify_confirm("No person name provided!", title="Error")
         self.parentApp.setNextForm("MAIN")
 
 
