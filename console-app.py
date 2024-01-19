@@ -13,17 +13,21 @@ class MainMenu(npyscreen.Form):
         self.connection_graph = None
 
     def beforeEditing(self):
-        self.name = f"Social Graph Tool - Main Menu ({self.graph_name})"
+        if self.connection_graph:
+            self.name = f"Social Graph Tool - Main Menu ({self.graph_name} - {len(self.connection_graph.nodes)} nodes, {len(self.connection_graph.edges)} edges)"
+        else:
+            self.name = f"Social Graph Tool - Main Menu (No Graph Loaded)"
 
     def create(self):
         self.menu_value = self.add(
             MainMenuSelector,
             scroll_exit=True,
-            max_height=8,
+            max_height=9,
             name="Main Menu Options",
             values=[
                 "New Graph",
                 "Load Graph",
+                "Clear Graph",
                 "Add Person",
                 "Add Node",
                 "Add Edge",
@@ -40,6 +44,10 @@ class MainMenuSelector(npyscreen.MultiLineAction):
             self._handle_destructive_action("NEWGRAPH")
         elif act_on_this == "Load Graph":  # Destructive
             self._handle_destructive_action("LOADGRAPH")
+        elif act_on_this == "Clear Graph":  # Destructive
+            self.parent.parentApp.getForm("MAIN").connection_graph = None
+            self.parent.parentApp.getForm("MAIN").graph_name = None
+            self.parent.parentApp.switchForm("MAIN")
         elif act_on_this == "Add Person":
             self._fail_if_no_graph("ADDPERSON")
         elif act_on_this == "Add Node":
