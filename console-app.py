@@ -216,12 +216,10 @@ class NewGraph(npyscreen.Form):
 
     def create(self):
         self.graph_name = self.add(
-            npyscreen.TitleText,
-            name="New Graph Name:",
+            npyscreen.TitleText, name="New Graph Name:", begin_entry_at=20
         )
 
 
-# Note: Currently overwriting any existing graph file without warning.
 class SaveGraph(npyscreen.Form):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -235,8 +233,7 @@ class SaveGraph(npyscreen.Form):
 
     def create(self):
         self.save_file = self.add(
-            npyscreen.TitleText,
-            name="Save File Name:",
+            npyscreen.TitleText, name="Save File Name:", begin_entry_at=20
         )
 
     def afterEditing(self):
@@ -249,28 +246,22 @@ class SaveGraph(npyscreen.Form):
 class AddPerson(npyscreen.Form):
     def create(self):
         self.person_name = self.add(
-            npyscreen.TitleText,
-            name="Person Name:",
+            npyscreen.TitleText, name="Person Name:", begin_entry_at=24
         )
         self.person_role = self.add(
-            npyscreen.TitleText,
-            name="Person Role:",
+            npyscreen.TitleText, name="Person Role:", begin_entry_at=24
         )
         self.person_place = self.add(
-            npyscreen.TitleText,
-            name="Person Place:",
+            npyscreen.TitleText, name="Person Place:", begin_entry_at=24
         )
         self.person_org = self.add(
-            npyscreen.TitleText,
-            name="Person Org:",
+            npyscreen.TitleText, name="Person Org:", begin_entry_at=24
         )
         self.person_account = self.add(
-            npyscreen.TitleText,
-            name="Person Account:",
+            npyscreen.TitleText, name="Person Account:", begin_entry_at=24
         )
         self.person_skills = self.add(
-            npyscreen.TitleText,
-            name="Person Skills (CSV string):",
+            npyscreen.TitleText, name="Person Skills (CSV):", begin_entry_at=24
         )
 
     def afterEditing(self):
