@@ -16,7 +16,7 @@ class MainMenu(npyscreen.Form):
         if self.connection_graph:
             self.name = f"Social Graph Tool - Main Menu ({self.graph_name} - {len(self.connection_graph.nodes)} nodes, {len(self.connection_graph.edges)} edges)"
         else:
-            self.name = f"Social Graph Tool - Main Menu (No Graph Loaded)"
+            self.name = "Social Graph Tool - Main Menu (No Graph Loaded)"
 
     def create(self):
         self.menu_value = self.add(
@@ -62,9 +62,12 @@ class MainMenuSelector(npyscreen.MultiLineAction):
         elif act_on_this == "Exit":  # Destructive
             self._handle_destructive_action(None)
 
-    # Note: Currently overwriting any existing graph without warning.
     def _handle_destructive_action(self, next_form):
-        self.parent.parentApp.switchForm(next_form)
+        if self.parent.parentApp.getForm("MAIN").connection_graph:
+            self.parent.parentApp.getForm("OVERWRITE").next_form = next_form
+            self.parent.parentApp.switchForm("OVERWRITE")
+        else:
+            self.parent.parentApp.switchForm(next_form)
 
     def _fail_if_no_graph(self, form_for_success):
         curr_graph = self.parent.parentApp.getForm("MAIN").connection_graph
@@ -76,6 +79,26 @@ class MainMenuSelector(npyscreen.MultiLineAction):
 
     def actionHighlighted(self, act_on_this, key_press):
         self._select_next_form(act_on_this, key_press)
+
+
+class OverwriteGraph(npyscreen.Form):
+    def init(self):
+        self.next_form = None
+
+    def create(self):
+        self.save_first = self.add(
+            npyscreen.TitleSelectOne,
+            max_height=4,
+            name="This action is destructive. Save working graph?",
+            values=["Yes", "No"],
+        )
+
+    def afterEditing(self):
+        if self.save_first.value[0] == 0:
+            self.parentApp.getForm("SAVEGRAPH").next_form = self.next_form
+            self.parentApp.setNextForm("SAVEGRAPH")
+        else:
+            self.parentApp.setNextForm(self.next_form)
 
 
 class AddNodeChoice(npyscreen.Form):
@@ -338,6 +361,9 @@ class ConsoleSocialGraphTool(npyscreen.NPSAppManaged):
         self.addForm("ADDNODE", AddNode, name="Social Graph Tool - Add Node")
         self.addForm(
             "SKILLSEARCH", SkillSearch, name="Social Graph Tool - Skill Search"
+        )
+        self.addForm(
+            "OVERWRITE", OverwriteGraph, name="Social Graph Tool - Overwrite Graph?"
         )
 
 
