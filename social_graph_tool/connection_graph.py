@@ -168,7 +168,10 @@ class ConnectionGraph:
                 self._internal_graph.nodes(data=True)
             )
         )
-        return matching_persons
+        neighbor_nodes = {}
+        for node_id in matching_persons:
+            neighbor_nodes[node_id] = self._internal_graph[node_id]  # self._internal_graph.neighbors(node_id)
+        return matching_persons, neighbor_nodes
 
     def add_person_org_edge(self, name: str, org: str):
         """

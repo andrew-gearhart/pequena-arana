@@ -9,6 +9,7 @@ from social_graph_tool.connection_graph import (
 class MainMenu(npyscreen.Form):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
+        self.edited = False
         self.graph_name = None
         self.connection_graph = None
 
@@ -47,6 +48,7 @@ class MainMenuSelector(npyscreen.MultiLineAction):
         elif act_on_this == "Clear Graph":  # Destructive
             self.parent.parentApp.getForm("MAIN").connection_graph = None
             self.parent.parentApp.getForm("MAIN").graph_name = None
+            self.parent.parentApp.getForm("MAIN").edited = False
             self.parent.parentApp.switchForm("MAIN")
         elif act_on_this == "Add Person":
             self._fail_if_no_graph("ADDPERSON")
@@ -63,7 +65,7 @@ class MainMenuSelector(npyscreen.MultiLineAction):
             self._handle_destructive_action(None)
 
     def _handle_destructive_action(self, next_form):
-        if self.parent.parentApp.getForm("MAIN").connection_graph:
+        if self.parent.parentApp.getForm("MAIN").edited:
             self.parent.parentApp.getForm("OVERWRITE").next_form = next_form
             self.parent.parentApp.switchForm("OVERWRITE")
         else:
@@ -151,6 +153,7 @@ class AddNode(npyscreen.Form):
             self.parentApp.getForm("MAIN").connection_graph.add_node(
                 self.label.value, kind=self.node_choice
             )
+            self.parentApp.getForm("MAIN").edited = True
         else:
             npyscreen.notify_confirm("No label provided!", title="Error")
         self.parentApp.setNextForm("MAIN")
@@ -206,14 +209,17 @@ class AddEdge(npyscreen.Form):
             self.parentApp.getForm("MAIN").connection_graph.add_person_org_edge(
                 self.source.value, self.dest.value
             )
+            self.parentApp.getForm("MAIN").edited = True
         elif self.edge_choice == "ONACCOUNT":
             self.parentApp.getForm("MAIN").connection_graph.add_person_account_edge(
                 self.source.value, self.dest.value
             )
+            self.parentApp.getForm("MAIN").edited = True
         elif self.edge_choice == "BASEDIN":
             self.parentApp.getForm("MAIN").connection_graph.add_person_place_edge(
                 self.source.value, self.dest.value
             )
+            self.parentApp.getForm("MAIN").edited = True
         else:
             npyscreen.notify_confirm("No edge choice selected!", title="Error")
         self.parentApp.setNextForm("MAIN")
@@ -246,6 +252,7 @@ class NewGraph(npyscreen.Form):
     def afterEditing(self):
         self.parentApp.getForm("MAIN").connection_graph = ConnectionGraph()
         self.parentApp.getForm("MAIN").graph_name = self.graph_name.value
+        self.parentApp.getForm("MAIN").edited = True
         self.parentApp.setNextForm("MAIN")
 
     def create(self):
@@ -274,6 +281,7 @@ class SaveGraph(npyscreen.Form):
         export_graph_to_graphml_file(
             self.parentApp.getForm("MAIN").connection_graph, self.save_file.value
         )
+        self.parentApp.getForm("MAIN").edited = False
         self.parentApp.setNextForm(self.next_form)
 
 
@@ -309,6 +317,7 @@ class AddPerson(npyscreen.Form):
                 account=self.person_account.value,
                 skills=self.person_skills.value,
             )
+            self.parentApp.getForm("MAIN").edited = True
         else:
             npyscreen.notify_confirm("No person name provided!", title="Error")
         self.parentApp.setNextForm("MAIN")
@@ -321,21 +330,67 @@ class SkillSearch(npyscreen.Form):
             name="Skill Query:",
         )
 
-    def _tabulate_results(self, results):
+    def _tabulate_results(self, node_results, additional_data):
         sorted_results = dict(
-            sorted(results.items(), key=lambda item: item[1]["label"])
+            sorted(node_results.items(), key=lambda item: item[1]["label"])
         )
-        out = "\n"
+        out = f'{"NAME":<30}{"ROLE":<50}{"LOCATION":<30}{"ORGANIZATION":<50}{"ACCOUNT":<30}{"SKILLS"}\n'
+        out += f"{'='*200}\n"
         for key, value in sorted_results.items():
             if "role" not in value:
                 value["role"] = ""
-            out += f'{value["label"]:<50}{value["role"]:<50}{value["skills"]}\n'
+            tmp_data = additional_data[key]
+            place_str, org_str, account_str = "", "", ""
+            if "PLACE" in tmp_data:
+                place_str = ",".join(tmp_data["PLACE"])
+            if "ORGANIZATION" in tmp_data:
+                org_str = ",".join(tmp_data["ORGANIZATION"])
+            if "ACCOUNT" in tmp_data:
+                account_str = ",".join(tmp_data["ACCOUNT"])
+
+            out += f'{value["label"]:<30}{value["role"]:<50}{place_str:<30}{org_str:<50}{account_str:<30}{value["skills"]}\n'
         return out
 
     def afterEditing(self):
         curr_graph = self.parentApp.getForm("MAIN").connection_graph
-        results = curr_graph.search_for_person_with_skill(self.query.value)
-        table = self._tabulate_results(results)
+        matching_persons, neighbor_nodes = curr_graph.search_for_person_with_skill(
+            self.query.value
+        )
+        additional_data = {}
+        # for each person node with matching skills
+        for person in neighbor_nodes:
+            additional_data[person] = {}
+            # for each neighbor node of the person node
+            for neighbor_id in neighbor_nodes[person]:
+                edge_info = neighbor_nodes[person][neighbor_id]
+                if (
+                    edge_info["kind"] == "BASEDIN"
+                    and curr_graph.nodes[neighbor_id]["kind"] == "PLACE"
+                ):
+                    if "PLACE" not in additional_data[person]:
+                        additional_data[person]["PLACE"] = []
+                    additional_data[person]["PLACE"].append(
+                        curr_graph.nodes[neighbor_id]["label"]
+                    )
+                elif (
+                    edge_info["kind"] == "ASSOCWITH"
+                    and curr_graph.nodes[neighbor_id]["kind"] == "ORGANIZATION"
+                ):
+                    if "ORGANIZATION" not in additional_data[person]:
+                        additional_data[person]["ORGANIZATION"] = []
+                    additional_data[person]["ORGANIZATION"].append(
+                        curr_graph.nodes[neighbor_id]["label"]
+                    )
+                elif (
+                    edge_info["kind"] == "ONACCOUNT"
+                    and curr_graph.nodes[neighbor_id]["kind"] == "ACCOUNT"
+                ):
+                    if "ACCOUNT" not in additional_data[person]:
+                        additional_data[person]["ACCOUNT"] = []
+                    additional_data[person]["ACCOUNT"].append(
+                        curr_graph.nodes[neighbor_id]["label"]
+                    )
+        table = self._tabulate_results(matching_persons, additional_data)
         npyscreen.notify_confirm(f"{table}", title="Results", wide=True)
         self.parentApp.setNextForm("MAIN")
 
