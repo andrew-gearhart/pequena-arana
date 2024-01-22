@@ -2,6 +2,8 @@ import logging
 import networkx as nx
 from pathlib import Path
 
+# TODO: Update search with word2vec to consider approximate matches that include the entire skillset as well.
+
 
 class ConnectionGraph:
     """
@@ -78,7 +80,7 @@ class ConnectionGraph:
         logging.info(f"Adding node '{label}' of kind {kind}.")
         if self._node_type_valid(kind):
             self._internal_graph.add_node(
-                label, kind=kind, **(keys | self.NODECOLORS[kind] | self.NODESIZE)
+                label, label=label, kind=kind, **(keys | self.NODECOLORS[kind] | self.NODESIZE)
             )
         else:
             logging.error(
@@ -118,6 +120,7 @@ class ConnectionGraph:
     def add_person(
         self,
         name: str,
+        role: str = "",
         place: str = "",
         org: str = "",
         account: str = "",
@@ -135,7 +138,7 @@ class ConnectionGraph:
         """
         if name in self._internal_graph.nodes:
             logging.warning("Node '{name}' already exists in the graph!")
-        self.add_node(name, kind="PERSON", keys={"skills": skills})
+        self.add_node(name, kind="PERSON", keys={"skills": skills, "role": role})
 
         if place:
             self.add_person_place_edge(name, place)
@@ -145,6 +148,30 @@ class ConnectionGraph:
 
         if account:
             self.add_person_account_edge(name, account)
+
+    def search_for_person_with_skill(self, skill: str):
+        """
+        Searches for persons in the graph who have a specific skill.
+
+        Parameters:
+        - skill (str): The skill to search for.
+
+        Returns:
+        - matching_persons (dict): A dictionary containing the matching persons as keys and their corresponding attributes as values.
+        """
+        matching_persons = dict(
+            filter(
+                lambda x: (
+                    x[0] if isinstance(x[1], dict) and x[1].get('kind') == 'PERSON' and skill.lower() in x[1].get('skills', '').lower().split(',')
+                    else False
+                ),
+                self._internal_graph.nodes(data=True)
+            )
+        )
+        neighbor_nodes = {}
+        for node_id in matching_persons:
+            neighbor_nodes[node_id] = self._internal_graph[node_id]  # self._internal_graph.neighbors(node_id)
+        return matching_persons, neighbor_nodes
 
     def add_person_org_edge(self, name: str, org: str):
         """
@@ -196,7 +223,6 @@ class ConnectionGraph:
         """
         if account not in self._internal_graph.nodes:
             self.add_node(account, kind="ACCOUNT")
-# Generate a regex that will check for four digits, a dash, two digits, a dash, and two more digits.
 
         if (name, account) in self._internal_graph.edges:
             logging.warning(
