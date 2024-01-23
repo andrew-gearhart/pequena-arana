@@ -305,6 +305,9 @@ class AddPerson(npyscreen.Form):
         self.person_skills = self.add(
             npyscreen.TitleText, name="Person Skills (CSV):", begin_entry_at=24
         )
+        self.person_nodes = self.add(
+            npyscreen.TitleText, name="Person Notes (CSV):", begin_entry_at=24
+        )
 
     def afterEditing(self):
         if self.person_name.value:
@@ -316,6 +319,7 @@ class AddPerson(npyscreen.Form):
                 org=self.person_org.value,
                 account=self.person_account.value,
                 skills=self.person_skills.value,
+                notes=self.person_nodes.value,
             )
             self.parentApp.getForm("MAIN").edited = True
         else:
@@ -349,6 +353,8 @@ class SkillSearch(npyscreen.Form):
                 account_str = ",".join(tmp_data["ACCOUNT"])
 
             out += f'{value["label"]:<30}{value["role"]:<50}{place_str:<30}{org_str:<50}{account_str:<30}{value["skills"]}\n'
+            if value["notes"]:
+                out += f'\tNOTES: {value["notes"]}\n'
         return out
 
     def afterEditing(self):
