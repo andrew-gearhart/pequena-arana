@@ -1,5 +1,5 @@
 from pathlib import Path
-from social_graph_tool.connection_graph import (
+from pequena_arana.connection_graph import (
     ConnectionGraph,
     export_graph_to_graphml_file,
     import_graph_from_graphml_file,
@@ -79,5 +79,5 @@ def test_search_for_person_with_skill():
     graph.add_person(
         "John Doe", place="New York", org="Company", account="", skills="Python"
     )
-    records = graph.search_for_person_with_skill("Python")
+    records, _ = graph.search_for_person_with_skill("Python")
     assert "John Doe" in records
