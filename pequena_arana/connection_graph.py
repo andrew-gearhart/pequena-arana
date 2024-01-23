@@ -2,8 +2,6 @@ import logging
 import networkx as nx
 from pathlib import Path
 
-# TODO: Update search with word2vec to consider approximate matches that include the entire skillset as well.
-
 
 class ConnectionGraph:
     """

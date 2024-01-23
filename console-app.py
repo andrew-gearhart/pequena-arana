@@ -1,5 +1,5 @@
 import npyscreen
-from social_graph_tool.connection_graph import (
+from pequena_arana.connection_graph import (
     ConnectionGraph,
     import_graph_from_graphml_file,
     export_graph_to_graphml_file,
