@@ -1,5 +1,5 @@
 import npyscreen
-from pequena_arana.connection_graph import (
+from pequenaarana.connection_graph import (
     ConnectionGraph,
     import_graph_from_graphml_file,
     export_graph_to_graphml_file,

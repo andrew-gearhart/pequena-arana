@@ -1,5 +1,5 @@
 from pathlib import Path
-from pequena_arana.connection_graph import (
+from pequenaarana.connection_graph import (
     ConnectionGraph,
     export_graph_to_graphml_file,
     import_graph_from_graphml_file,
