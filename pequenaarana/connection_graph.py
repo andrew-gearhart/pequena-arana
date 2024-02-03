@@ -78,12 +78,14 @@ class ConnectionGraph:
         logging.info(f"Adding node '{label}' of kind {kind}.")
         if self._node_type_valid(kind):
             self._internal_graph.add_node(
-                label, label=label, kind=kind, **(keys | self.NODECOLORS[kind] | self.NODESIZE)
+                label,
+                label=label,
+                kind=kind,
+                **(keys | self.NODECOLORS[kind] | self.NODESIZE),
             )
         else:
             logging.error(
-                "Attempted to add unknown node " f"type '{
-                    kind}'. Doing nothing."
+                "Attempted to add unknown node " f"type '{kind}'. Doing nothing."
             )
 
     def add_edge(
@@ -102,8 +104,7 @@ class ConnectionGraph:
         None
         """
         logging.info(
-            f"Adding edge ({origin_node}, " f"{
-                endpoint_node}) of kind '{kind}'."
+            f"Adding edge ({origin_node}, " f"{endpoint_node}) of kind '{kind}'."
         )
         if self._edge_type_valid(kind):
             self._internal_graph.add_edge(
@@ -111,8 +112,7 @@ class ConnectionGraph:
             )
         else:
             logging.error(
-                "Attempted to add unknown edge " f"type '{
-                    kind}'. Doing nothing."
+                "Attempted to add unknown edge " f"type '{kind}'. Doing nothing."
             )
 
     def add_person(
@@ -137,7 +137,9 @@ class ConnectionGraph:
         """
         if name in self._internal_graph.nodes:
             logging.warning("Node '{name}' already exists in the graph!")
-        self.add_node(name, kind="PERSON", keys={"skills": skills, "role": role, "notes": notes})
+        self.add_node(
+            name, kind="PERSON", keys={"skills": skills, "role": role, "notes": notes}
+        )
 
         if place:
             self.add_person_place_edge(name, place)
@@ -161,15 +163,20 @@ class ConnectionGraph:
         matching_persons = dict(
             filter(
                 lambda x: (
-                    x[0] if isinstance(x[1], dict) and x[1].get('kind') == 'PERSON' and skill.lower() in x[1].get('skills', '').lower().split(',')
+                    x[0]
+                    if isinstance(x[1], dict)
+                    and x[1].get("kind") == "PERSON"
+                    and skill.lower() in x[1].get("skills", "").lower().split(",")
                     else False
                 ),
-                self._internal_graph.nodes(data=True)
+                self._internal_graph.nodes(data=True),
             )
         )
         neighbor_nodes = {}
         for node_id in matching_persons:
-            neighbor_nodes[node_id] = self._internal_graph[node_id]  # self._internal_graph.neighbors(node_id)
+            neighbor_nodes[node_id] = self._internal_graph[
+                node_id
+            ]  # self._internal_graph.neighbors(node_id)
         return matching_persons, neighbor_nodes
 
     def add_person_org_edge(self, name: str, org: str):
@@ -186,8 +193,7 @@ class ConnectionGraph:
         if org not in self._internal_graph.nodes:
             self.add_node(org, kind="ORGANIZATION")
         if (name, org) in self._internal_graph.edges:
-            logging.warning(
-                f"Edge ({name}, {org}) already exists in the graph!")
+            logging.warning(f"Edge ({name}, {org}) already exists in the graph!")
         self.add_edge(name, org, kind="ASSOCWITH")
 
     def add_person_place_edge(self, name: str, place: str):
@@ -205,8 +211,7 @@ class ConnectionGraph:
             self.add_node(place, kind="PLACE")
 
         if (name, place) in self._internal_graph.edges:
-            logging.warning(
-                f"Edge ({name}, {place}) already exists in the graph!")
+            logging.warning(f"Edge ({name}, {place}) already exists in the graph!")
         self.add_edge(name, place, kind="BASEDIN")
 
     def add_person_account_edge(self, name: str, account: str):
@@ -224,8 +229,7 @@ class ConnectionGraph:
             self.add_node(account, kind="ACCOUNT")
 
         if (name, account) in self._internal_graph.edges:
-            logging.warning(
-                f"Edge ({name}, {account}) already exists in the graph!")
+            logging.warning(f"Edge ({name}, {account}) already exists in the graph!")
         self.add_edge(name, account, kind="ONACCOUNT")
 
     def _node_type_valid(self, potential_node: str) -> bool:
