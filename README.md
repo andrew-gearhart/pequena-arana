@@ -33,7 +33,7 @@ from the project directory. This should display a main menu with options to crea
 ![image](https://github.com/andrew-gearhart/pequena-arana/assets/2237295/8bfbcb1d-22d1-4fff-84e7-38d063821713)
 
 
-Graphs can be loaded and exported into [GraphML](http://graphml.graphdrawing.org/) format, which is compatible with Gephi. A graph (either created new or loaded from a file) is only saved to a file upon an explicit save, altough the tool has the ability to warn you if you are planning a destructive action. Loaded graphs must adhere to the expected graph schema (described below) to ensure correct functioning--programmic creation of such graphs can be assisted via use of the included *connection_graph* module.
+Graphs can be loaded and exported into [GraphML](http://graphml.graphdrawing.org/) format, which is compatible with Gephi. A graph (either created new or loaded from a file) is only saved to a file upon an explicit save, altough the tool has the ability to warn you if you are planning a destructive action (except for the *Clear Graph* option, this happens immediately). Loaded graphs must adhere to the expected graph schema to ensure correct functioning--programmic creation of such graphs can be assisted via use of the included *connection_graph* module.
 
 ## Schema
 At its core, Prequeña Araña is a small Python library that implements a simple professional graph schema with four types of nodes: *PERSON*, *ORGANIZATION*, *PLACE*, and *ACCOUNT*. There are currently only three types of edges:
