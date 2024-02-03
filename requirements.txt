@@ -1,0 +1,8 @@
+networkx
+npyscreen==4.10.5
+numpy
+packaging
+pluggy
+pytest
+setuptools
+wheel
