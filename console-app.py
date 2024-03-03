@@ -46,10 +46,9 @@ class MainMenuSelector(npyscreen.MultiLineAction):
         elif act_on_this == "Load Graph":  # Destructive
             self._handle_destructive_action("LOADGRAPH")
         elif act_on_this == "Clear Graph":  # Destructive
-            self.parent.parentApp.getForm("MAIN").connection_graph = None
-            self.parent.parentApp.getForm("MAIN").graph_name = None
-            self.parent.parentApp.getForm("MAIN").edited = False
-            self.parent.parentApp.switchForm("MAIN")
+            self._handle_destructive_action(
+                "MAIN", self._clear_graph, self._clear_graph
+            )
         elif act_on_this == "Add Person":
             self._fail_if_no_graph("ADDPERSON")
         elif act_on_this == "Add Node":
@@ -64,9 +63,17 @@ class MainMenuSelector(npyscreen.MultiLineAction):
         elif act_on_this == "Exit":  # Destructive
             self._handle_destructive_action(None)
 
-    def _handle_destructive_action(self, next_form):
+    def _handle_destructive_action(
+        self, next_form, post_savework_fcn=None, post_nosavework_fcn=None
+    ):
         if self.parent.parentApp.getForm("MAIN").edited:
             self.parent.parentApp.getForm("OVERWRITE").next_form = next_form
+            self.parent.parentApp.getForm(
+                "OVERWRITE"
+            ).additional_work_fcn_after_save = post_savework_fcn
+            self.parent.parentApp.getForm(
+                "OVERWRITE"
+            ).additional_work_fcn_if_no_save = post_nosavework_fcn
             self.parent.parentApp.switchForm("OVERWRITE")
         else:
             self.parent.parentApp.switchForm(next_form)
@@ -79,6 +86,11 @@ class MainMenuSelector(npyscreen.MultiLineAction):
         else:
             self.parent.parentApp.switchForm(form_for_success)
 
+    def _clear_graph(self):
+        self.parent.parentApp.getForm("MAIN").connection_graph = None
+        self.parent.parentApp.getForm("MAIN").graph_name = None
+        self.parent.parentApp.getForm("MAIN").edited = False
+
     def actionHighlighted(self, act_on_this, key_press):
         self._select_next_form(act_on_this, key_press)
 
@@ -86,6 +98,10 @@ class MainMenuSelector(npyscreen.MultiLineAction):
 class OverwriteGraph(npyscreen.Form):
     def init(self):
         self.next_form = None
+        # Provide the option to run a function after saving the graph, but before going to the next form.
+        self.additional_work_fcn_after_save = None
+        # Provide the option to run a function after NOT saving the graph, but before going to the next form.
+        self.additional_work_fcn_if_no_save = None
 
     def create(self):
         self.save_first = self.add(
@@ -98,8 +114,15 @@ class OverwriteGraph(npyscreen.Form):
     def afterEditing(self):
         if self.save_first.value[0] == 0:
             self.parentApp.getForm("SAVEGRAPH").next_form = self.next_form
+            self.parentApp.getForm("SAVEGRAPH").additional_work_fcn = (
+                self.additional_work_fcn_after_save
+            )
             self.parentApp.setNextForm("SAVEGRAPH")
         else:
+            # Call an extra work function here, if needed to clean up some state if not saving.
+            # Implemented as a hack to allow for clearing the graph without having to create a new form.
+            if self.additional_work_fcn_if_no_save:
+                self.additional_work_fcn_if_no_save()
             self.parentApp.setNextForm(self.next_form)
 
 
@@ -265,6 +288,7 @@ class SaveGraph(npyscreen.Form):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.next_form = "MAIN"
+        self.additional_work_fcn = None
 
     def beforeEditing(self):
         curr_graph = self.parentApp.getForm("MAIN").connection_graph
@@ -282,6 +306,10 @@ class SaveGraph(npyscreen.Form):
             self.parentApp.getForm("MAIN").connection_graph, self.save_file.value
         )
         self.parentApp.getForm("MAIN").edited = False
+        # Call an extra work function here, if needed to clean up some state after saving.
+        # Implemented as a hack to allow for clearing the graph without having to create a new form.
+        if self.additional_work_fcn:
+            self.additional_work_fcn()
         self.parentApp.setNextForm(self.next_form)
 
 
