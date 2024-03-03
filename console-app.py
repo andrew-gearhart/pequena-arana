@@ -64,16 +64,12 @@ class MainMenuSelector(npyscreen.MultiLineAction):
             self._handle_destructive_action(None)
 
     def _handle_destructive_action(
-        self, next_form, post_savework_fcn=None, post_nosavework_fcn=None
+        self, next_form, post_save_fcn=None, no_save_fcn=None
     ):
         if self.parent.parentApp.getForm("MAIN").edited:
             self.parent.parentApp.getForm("OVERWRITE").next_form = next_form
-            self.parent.parentApp.getForm(
-                "OVERWRITE"
-            ).additional_work_fcn_after_save = post_savework_fcn
-            self.parent.parentApp.getForm(
-                "OVERWRITE"
-            ).additional_work_fcn_if_no_save = post_nosavework_fcn
+            self.parent.parentApp.getForm("OVERWRITE").post_save_fcn = post_save_fcn
+            self.parent.parentApp.getForm("OVERWRITE").no_save_fcn = no_save_fcn
             self.parent.parentApp.switchForm("OVERWRITE")
         else:
             self.parent.parentApp.switchForm(next_form)
@@ -99,9 +95,9 @@ class OverwriteGraph(npyscreen.Form):
     def init(self):
         self.next_form = None
         # Provide the option to run a function after saving the graph, but before going to the next form.
-        self.additional_work_fcn_after_save = None
+        self.post_save_fcn = None
         # Provide the option to run a function after NOT saving the graph, but before going to the next form.
-        self.additional_work_fcn_if_no_save = None
+        self.no_save_fcn = None
 
     def create(self):
         self.save_first = self.add(
@@ -114,15 +110,13 @@ class OverwriteGraph(npyscreen.Form):
     def afterEditing(self):
         if self.save_first.value[0] == 0:
             self.parentApp.getForm("SAVEGRAPH").next_form = self.next_form
-            self.parentApp.getForm("SAVEGRAPH").additional_work_fcn = (
-                self.additional_work_fcn_after_save
-            )
+            self.parentApp.getForm("SAVEGRAPH").post_save_fcn = self.post_save_fcn
             self.parentApp.setNextForm("SAVEGRAPH")
         else:
             # Call an extra work function here, if needed to clean up some state if not saving.
             # Implemented as a hack to allow for clearing the graph without having to create a new form.
-            if self.additional_work_fcn_if_no_save:
-                self.additional_work_fcn_if_no_save()
+            if self.no_save_fcn:
+                self.no_save_fcn()
             self.parentApp.setNextForm(self.next_form)
 
 
@@ -288,7 +282,7 @@ class SaveGraph(npyscreen.Form):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.next_form = "MAIN"
-        self.additional_work_fcn = None
+        self.post_save_fcn = None
 
     def beforeEditing(self):
         curr_graph = self.parentApp.getForm("MAIN").connection_graph
@@ -308,8 +302,8 @@ class SaveGraph(npyscreen.Form):
         self.parentApp.getForm("MAIN").edited = False
         # Call an extra work function here, if needed to clean up some state after saving.
         # Implemented as a hack to allow for clearing the graph without having to create a new form.
-        if self.additional_work_fcn:
-            self.additional_work_fcn()
+        if self.post_save_fcn:
+            self.post_save_fcn()
         self.parentApp.setNextForm(self.next_form)
 
 
